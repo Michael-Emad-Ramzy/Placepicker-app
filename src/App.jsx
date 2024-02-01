@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 import Places from "./components/Places.jsx";
 import { AVAILABLE_PLACES } from "./data.js";
@@ -7,12 +7,16 @@ import DeleteConfirmation from "./components/DeleteConfirmation.jsx";
 import logoImg from "./assets/logo.png";
 import { sortPlacesByDistance } from "./loc.js";
 
-const storedIDs = JSON.parse(localStorage.getItem('selectedPlaces')) || [] ;
-const storedPlaces = storedIDs.map((id)=> AVAILABLE_PLACES.find((place)=> place.id ===id))
+// this code is for when reload the page the places saved in the (places to save) not gone
+//insted of this it remain in the same place.
+const storedIDs = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
+const storedPlaces = storedIDs.map((id) =>
+  AVAILABLE_PLACES.find((place) => place.id === id)
+);
 
 function App() {
-  const modal = useRef();
   const selectedPlace = useRef();
+  const [modalIsOpen, setModalISOpen] = useState(false);
   const [availablePlaces, setAvailablePlaces] = useState([]);
   const [pickedPlaces, setPickedPlaces] = useState(storedPlaces);
 
@@ -30,15 +34,17 @@ function App() {
       );
       setAvailablePlaces(sortedPlaces);
     });
-  }, []);
+  }, []); //useEffect is a hook in React that enables performing side effects in functional
+  //components. Side effects can include data fetching, subscriptions, manually changing
+  //the DOM, or any operation that involves interactions with the outside world.
 
   function handleStartRemovePlace(id) {
-    modal.current.open();
+    setModalISOpen(true);
     selectedPlace.current = id;
   }
 
   function handleStopRemovePlace() {
-    modal.current.close();
+    setModalISOpen(false);
   }
 
   function handleSelectPlace(id) {
@@ -59,22 +65,28 @@ function App() {
     }
   }
 
-  function handleRemovePlace() {
+
+  //this Callback Hook is used to avoid re-excute the function whenever it triggerd again,
+  //only excute it when the component function re-excute.
+  //useCallback returns that function that you wrapped.
+  // so it mostly used when passing a function as dependencies to useEffect.
+  const handleRemovePlace =useCallback(function handleRemovePlace() {
     setPickedPlaces((prevPickedPlaces) =>
       prevPickedPlaces.filter((place) => place.id !== selectedPlace.current)
     );
-    modal.current.close();
+    setModalISOpen(false)
 
     const storedIDs = JSON.parse(localStorage.getItem("selectedPlaces")) || [];
     localStorage.setItem(
       "selectedPlaces",
       JSON.stringify(storedIDs.filter((id) => id !== selectedPlace.current))
     );
-  }
+  } , []);//this dependencies is used as the dependncies in the useEffect
+  //you should add any props or state values that used in inside this wrapped funtion 
 
   return (
     <>
-      <Modal ref={modal}>
+      <Modal open={modalIsOpen} onClose={handleStopRemovePlace}>
         <DeleteConfirmation
           onCancel={handleStopRemovePlace}
           onConfirm={handleRemovePlace}

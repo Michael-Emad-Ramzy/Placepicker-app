@@ -1,4 +1,23 @@
+import { useEffect } from "react";
+import ProgressBar from "./ProgressBar";
+
+
+const Timer = 3000;
 export default function DeleteConfirmation({ onConfirm, onCancel }) {
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onConfirm();
+    }, Timer);
+
+    //This return function will excutes only befor this function Effect run again OR
+    //right before this component dismount so before its removed from the DOM
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [onConfirm]);
+  // !!this dependencies as a function may cause an infinite loop
+
   return (
     <div id="delete-confirmation">
       <h2>Are you sure?</h2>
@@ -11,6 +30,9 @@ export default function DeleteConfirmation({ onConfirm, onCancel }) {
           Yes
         </button>
       </div>
+      <ProgressBar timer={Timer}/>
     </div>
+    
   );
 }
+
